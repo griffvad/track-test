@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>Text track demo</title>
+<style>
+.customClass {background: #FF0; color: #000;}
+</style>
+<script>
+function print(str) {
+    // Use createTextNode so we don't need to do escaping
+    var out = document.getElementById("output");
+    var p = document.createElement("p");
+    var content = document.createTextNode(str);
+    p.appendChild(content);
+    out.insertBefore(p, out.firstChild);
+}
+
+function varDump(object) {
+    var output = "{";
+    for (property in object) {
+        output += property + ': ' + object[property]+'; ';
+    }
+    output += "}";
+    return output;
+}
+
+function getTracks(player, type) {
+	if(type == "Audio") {
+		return player.audioTracks;
+	} else if (type == "Text") {
+		return player.textTracks;
+	} else if (type == "Video") {
+		return player.videoTracks;
+	}
+	throw("Invalid type: " + type);
+}
+
+function listTracks(player, type) {
+	print("---");
+	var length;
+    try {
+    	var tracks = getTracks(player, type);
+        for(var j = 0; j < tracks.length; ++j) {
+            var track = tracks[j];
+            print(type + "Track[" + j + "]: " + varDump(track));
+        }
+        length = tracks.length;
+		print("Listing " + length + " " + type + "Tracks.");
+    } catch (e) {
+        print(e);
+        print("Error listing " + type + "Tracks.");
+    }
+}
+
+function enableTrack(player, type, i, mode) {
+    print(((mode == true || mode == "showing") ? "Enabling " : "Disabling ") + type + "Track " + i);
+    try {
+    	var tracks = getTracks(player, type);
+        var track = tracks[i];
+    	if(type == "Audio") {
+    		track.enabled = mode;
+    	} else if (type == "Text") {
+    		track.mode = mode;
+    	} else if (type == "Video") {
+    		track.selected = mode;
+    	}
+        //print(type + "Track mode set to: " + mode + "! " + type + "Track: " + varDump(track));
+    } catch (e) {
+        print(e);
+        return false;
+    }
+}
+
+function setupControls(player, controlsId, type) {
+	var container = document.getElementById(controlsId);
+	
+	// Remove existing controls
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+
+	var button = document.createElement("button");
+	var label = document.createTextNode("Show");
+	button.appendChild(label);
+	button.onclick = function() {
+		listTracks(player, type);
+	};
+	container.appendChild(button);
+	
+	var tracks;
+	if(type == "Audio") {
+		tracks = player.audioTracks;
+	} else if (type == "Text") {
+		tracks = player.textTracks;
+	} else if (type == "Video") {
+		tracks = player.videoTracks;
+	} else {
+		print("Invalid type: " + type);
+		return;
+	}
+	if(!tracks) {
+		return;
+	}
+
+	print("There are " + tracks.length + " " + type + " tracks.");
+	for(var i = 0; i < tracks.length; ++i) {
+		var button = document.createElement("button");
+		var label = document.createTextNode("Enable " + i);
+		button.appendChild(label);
+		if(type == "Audio" || type == "Video") {
+		    button.onclick = enableTrack.bind(this, player, type, i, true);
+		} else {
+		    button.onclick = enableTrack.bind(this, player, type, i, "showing");
+		}
+		container.appendChild(button);
+	
+		button = document.createElement("button");
+		label = document.createTextNode("Disable " + i);
+		button.appendChild(label);
+		if(type == "Audio" || type == "Video") {
+		    button.onclick = enableTrack.bind(this, player, type, i, false);
+		} else {
+		    button.onclick = enableTrack.bind(this, player, type, i, "disabled");
+		}
+		container.appendChild(button);
+	}
+}
+
+function setupHandlers() {
+	try {
+		var player = document.getElementsByTagName("video")[0];
+		var func;
+		if(player.audioTracks) {
+			func = setupControls.bind(this, player, "audioControls", "Audio");
+			player.audioTracks.addEventListener("addtrack", func);
+			func();
+		} else {
+			print("No audio tracks.");
+		}
+		if(player.textTracks) {
+			func = setupControls.bind(this, player, "textControls", "Text");
+			player.textTracks.addEventListener("addtrack", func);
+			func();
+		} else {
+			print("No text tracks.");
+		}
+		if(player.videoTracks) {
+			func = setupControls.bind(this,player, "videoControls", "Video");
+			player.videoTracks.addEventListener("addtrack", func);
+			func();
+		} else {
+			print("No video tracks.");
+		}
+	} catch (e) {
+		print(e);
+	}
+}
+</script>
+</head>
+
+<body>
+<p>
+<video id="exampleVideo" controls="controls" height="240" onloadstart="setupHandlers();">
+    <source type="video/ogg" src="test.mkv">
+    <source type="video/ogg" src="just_video.ogv">
+    <source type="video/ogg" src="sintel_trailer-480p.ogv">
+	<source type="video/mpeg" src="scte20_scte21_ntsc_dtvcc_7.mpg">
+    <source type="video/ogg" src="test.mkv">
+	<source type="video/ogg" src="two_videos.mkv">
+	<source type="video/mpeg" src="hd_sd_recording.mpg">
+    <source type="video/ogg" src="test.ogv">
+    <source type="video/ogg" src="sintel_trailer-480p.mkv">
+    <source type="video/ogg" src="sintel_trailer-480p.ogv">
+    <source type="video/ogg" src="counting-subtitled.ogv">
+	<track src="subtitles.vtt" kind="subtitles" srclang="en" label="English" />
+</video>
+</p>
+
+<h2>VideoTrackList</h2>
+<p id="videoControls">
+</p>
+
+<h2>AudioTrackList</h2>
+<p id="audioControls">
+</p>
+
+<h2>TextTrackList</h2>
+<p id="textControls">
+</p>
+
+<div id="output"></div>
+
+</body></html>
