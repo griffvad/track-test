@@ -29,11 +29,11 @@ function varDump(object) {
 }
 
 function getTracks(player, type) {
-    if(type == "Audio") {
+    if(type == "audio") {
         return player.audioTracks;
-    } else if (type == "Text") {
+    } else if (type == "text") {
         return player.textTracks;
-    } else if (type == "Video") {
+    } else if (type == "video") {
         return player.videoTracks;
     }
     throw("Invalid type: " + type);
@@ -46,26 +46,26 @@ function listTracks(player, type) {
         var tracks = getTracks(player, type);
         for(var j = 0; j < tracks.length; ++j) {
             var track = tracks[j];
-            print(type + "Track[" + j + "]: " + varDump(track));
+            print(type + " track[" + j + "]: " + varDump(track));
         }
         length = tracks.length;
-        print("Listing " + length + " " + type + "Tracks.");
+        print("Listing " + length + " " + type + " tracks.");
     } catch (e) {
         print(e);
-        print("Error listing " + type + "Tracks.");
+        print("Error listing " + type + " tracks.");
     }
 }
 
 function enableTrack(player, type, i, mode) {
-    print(((mode == true || mode == "showing") ? "Enabling " : "Disabling ") + type + "Track " + i);
+    print(((mode == true || mode == "showing") ? "Enabling " : "Disabling ") + type + " track " + i);
     try {
         var tracks = getTracks(player, type);
         var track = tracks[i];
-        if(type == "Audio") {
+        if(type == "audio") {
             track.enabled = mode;
-        } else if (type == "Text") {
+        } else if (type == "text") {
             track.mode = mode;
-        } else if (type == "Video") {
+        } else if (type == "video") {
             track.selected = mode;
         }
     } catch (e) {
@@ -91,11 +91,11 @@ function setupControls(player, controlsId, type) {
     container.appendChild(button);
 
     var tracks;
-    if(type == "Audio") {
+    if(type == "audio") {
         tracks = player.audioTracks;
-    } else if (type == "Text") {
+    } else if (type == "text") {
         tracks = player.textTracks;
-    } else if (type == "Video") {
+    } else if (type == "video") {
         tracks = player.videoTracks;
     } else {
         print("Invalid type: " + type);
@@ -110,7 +110,7 @@ function setupControls(player, controlsId, type) {
         var button = document.createElement("button");
         var label = document.createTextNode("Enable " + i);
         button.appendChild(label);
-        if(type == "Audio" || type == "Video") {
+        if(type == "audio" || type == "video") {
             button.onclick = enableTrack.bind(this, player, type, i, true);
         } else {
             button.onclick = enableTrack.bind(this, player, type, i, "showing");
@@ -120,7 +120,7 @@ function setupControls(player, controlsId, type) {
         button = document.createElement("button");
         label = document.createTextNode("Disable " + i);
         button.appendChild(label);
-        if(type == "Audio" || type == "Video") {
+        if(type == "audio" || type == "video") {
             button.onclick = enableTrack.bind(this, player, type, i, false);
         } else {
             button.onclick = enableTrack.bind(this, player, type, i, "disabled");
@@ -132,27 +132,18 @@ function setupControls(player, controlsId, type) {
 function setupHandlers() {
     try {
         var player = document.getElementsByTagName("video")[0];
-        var func;
-        if(player.audioTracks) {
-            func = setupControls.bind(this, player, "audioControls", "Audio");
-            player.audioTracks.addEventListener("addtrack", func);
-            func();
-        } else {
-            print("No audio tracks.");
-        }
-        if(player.textTracks) {
-            func = setupControls.bind(this, player, "textControls", "Text");
-            player.textTracks.addEventListener("addtrack", func);
-            func();
-        } else {
-            print("No text tracks.");
-        }
-        if(player.videoTracks) {
-            func = setupControls.bind(this,player, "videoControls", "Video");
-            player.videoTracks.addEventListener("addtrack", func);
-            func();
-        } else {
-            print("No video tracks.");
+        var types = ["audio", "text", "video"];
+        for (var i = 0; i < types.length; ++i) {
+            var type = types[i];
+            var list = player[type + "Tracks"];
+            if (list) {
+                var func = setupControls.bind(this, player, type + "Controls", type);
+                list.addEventListener("addtrack", func);
+                list.addEventListener("removetrack", func);
+                func();
+            } else {
+                print("No " + type + " tracks.");
+            }
         }
     } catch (e) {
         print(e);
@@ -164,9 +155,13 @@ function setupHandlers() {
 <body>
 <p>
 <video id="exampleVideo" controls="controls" width="640" height="480" onloadstart="setupHandlers();">
+    <source type="video/mpegts" src="scte20_scte21_ntsc_dtvcc_7.mpg">
+    <source type="video/x-matroska" src="http://ftp.nluug.nl/ftp/graphics/blender/apricot/trailer/Sintel_Trailer1.480p.DivX_Plus_HD.mkv">
+    <source type="video/mpegts" src="scte20_scte21_ntsc_dtvcc_7.mpg">
+    <source type="video/ogg" src="sintel_trailer-480p.ogv">v
     <source type="video/ogg" src="test.ogv">
     <source type="video/x-matroska" src="test.mkv">
-    <track src="subtitles.vtt" kind="subtitles" srclang="en" label="English" />
+    <!--<track src="subtitles.vtt" kind="subtitles" srclang="en" label="English" />-->
 </video>
 </p>
 
