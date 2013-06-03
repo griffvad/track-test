@@ -1,0 +1,22 @@
+::cue(c.mono_serif) {
+  font-family:'Courier, monospace, serif';
+}
+::cue(c.prop_serif) {
+  font-family:'Times New Roman, serif';
+}
+::cue(c.mono_sans) {
+  font-family:'Helvetica, monospace, sans-serif';
+}
+::cue(c.prop_sans) {
+  font-family:'Arial, Swiss, sans-serif';
+}
+::cue(c.casual) {
+  font-family:'Dom, Impress, casual';
+}
+::cue(c.cursive) {
+  font-family:'Coronet, Marigold, cursive';
+}
+::cue(c.small_caps) {
+  font-family:'Engravers Gothic, monospace, sans-serif';
+  font-variant:small-caps;
+}
