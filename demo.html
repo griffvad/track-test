@@ -12,23 +12,44 @@
 	}
 </style>
 <script>
-function print(str) {
-    // Use createTextNode so we don't need to do escaping
-    var out = document.getElementById("output");
-    var p = document.createElement("p");
-    var content = document.createTextNode(str);
-    p.appendChild(content);
-    out.insertBefore(p, out.firstChild);
-}
 
-function varDump(object) {
-    var output = "{";
-    for (property in object) {
-        output += property + ': ' + object[property]+'; ';
-    }
-    output += "}";
-    return output;
-}
+/* Set this to read the config from a file. Note that the same-origin policy
+ * applies, so you'll need to setup CORS on the server:
+ * http://en.wikipedia.org/wiki/Cross-origin_resource_sharing
+ * See config below for the format.
+ */
+//var configFile = "http://server.com/config.json";
+var config = {
+    /* height of the video element. Leave falsy for auto */
+    height: 480,
+
+    /* List of media options. Name will be shown on the button label, url is the URL */
+    media: [{
+        label: "Tears of Steel (MPEG-TS + CEA 608)",
+        url: "http://10.49.5.101/videos/Ultimate-Stream-1280x720-5Mb-mpeg2v-ac3_0100_CC_Trim.ts"
+    }, {
+        label: "Sintel Trailer (Theora + Vorbis + Kate)",
+        url: "http://ftp.nluug.nl/ftp/graphics/blender/apricot/trailer/sintel_trailer-480p.ogv"
+    }, {
+        label: "Sintel Trailer (h264 + aac + Subtitles)",
+        url: "http://ftp.nluug.nl/ftp/graphics/blender/apricot/trailer/Sintel_Trailer1.480p.DivX_Plus_HD.mkv"
+    }, {
+        label: "Multi Track Test File (Ogg; 2x Theora + 2x Vorbis)",
+        url: "test.ogv"
+    }, {
+        label: "Multi Track Test File (Matroska; 2x Theora + 2x Vorbis)",
+        url: "test.mkv"
+    }],
+
+    /* Whether or not to show native controls */
+    showControls: true,
+
+    /* Whether or not to show extra track control buttons */
+    showTrackButtons: true,
+
+    /* Width of the video element. Leave falsy for auto. */
+    width: 640
+};
 
 function getTracks(player, type) {
     if(type == "audio") {
@@ -42,50 +63,35 @@ function getTracks(player, type) {
 }
 
 function listTracks(player, type) {
-    print("---");
-    var length;
-    try {
-        var tracks = getTracks(player, type);
-        for(var j = 0; j < tracks.length; ++j) {
-            var track = tracks[j];
-            print(type + " track[" + j + "]: " + varDump(track));
-        }
-        length = tracks.length;
-        print("Listing " + length + " " + type + " tracks.");
-    } catch (e) {
-        print(e);
-        print("Error listing " + type + " tracks.");
+    var tracks = getTracks(player, type);
+    console.log("Listing " + tracks.length + " " + type + " tracks.");
+    for(var j = 0; j < tracks.length; ++j) {
+        var track = tracks[j];
+        console.log(type + " track[" + j + "]: ", track);
     }
 }
 
 function enableTrack(player, type, i, mode) {
-    print(((mode == true || mode == "showing") ? "Enabling " : "Disabling ") + type + " track " + i);
-    try {
-        var tracks = getTracks(player, type);
-        var track = tracks[i];
-        if(type == "audio") {
-            track.enabled = mode;
-        } else if (type == "text") {
-            track.mode = mode;
-        } else if (type == "video") {
-            track.selected = mode;
-        }
-    } catch (e) {
-        print(e);
-        return false;
+    console.log(((mode == true || mode == "showing") ? "Enabling " : "Disabling ") + type + " track " + i);
+    var tracks = getTracks(player, type);
+    var track = tracks[i];
+    if(type == "audio") {
+        track.enabled = mode;
+    } else if (type == "text") {
+        track.mode = mode;
+    } else if (type == "video") {
+        track.selected = mode;
     }
 }
 
-function setupControls(player, controlsId, type) {
-    var container = document.getElementById(controlsId);
-
+function setupControls(player, container, type) {
     // Remove existing controls
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
 
     var button = document.createElement("button");
-    var label = document.createTextNode("Show");
+    var label = document.createTextNode("List " + type + " tracks");
     button.appendChild(label);
     button.onclick = function() {
         listTracks(player, type);
@@ -100,17 +106,17 @@ function setupControls(player, controlsId, type) {
     } else if (type == "video") {
         tracks = player.videoTracks;
     } else {
-        print("Invalid type: " + type);
+        console.log("Invalid type: " + type);
         return;
     }
     if(!tracks) {
         return;
     }
 
-    print("There are " + tracks.length + " " + type + " tracks.");
+    console.log("There are " + tracks.length + " " + type + " tracks.");
     for(var i = 0; i < tracks.length; ++i) {
         var button = document.createElement("button");
-        var label = document.createTextNode("Enable " + i);
+        var label = document.createTextNode("Enable " + type + " " + i);
         button.appendChild(label);
         if(type == "audio" || type == "video") {
             button.onclick = enableTrack.bind(this, player, type, i, true);
@@ -120,7 +126,7 @@ function setupControls(player, controlsId, type) {
         container.appendChild(button);
 
         button = document.createElement("button");
-        label = document.createTextNode("Disable " + i);
+        label = document.createTextNode("Disable " + type + " " + i);
         button.appendChild(label);
         if(type == "audio" || type == "video") {
             button.onclick = enableTrack.bind(this, player, type, i, false);
@@ -131,55 +137,96 @@ function setupControls(player, controlsId, type) {
     }
 }
 
-function setupHandlers() {
-    try {
-        var player = document.getElementsByTagName("video")[0];
+function configFileReadyStateChanged(event) {
+    var request = event.target;
+    if (request.readyState === 4) {
+        console.log("Loaded config file!");
+        if (request.status !== 200) {
+            if (request.status === 0) {
+                console.log("Failed to load config file due to cross origin security.");
+            } else {
+                console.log("Failed to load config file. Status was " + request.status);
+            }
+        } else {
+            window.config = JSON.parse(request.responseText);
+            loadConfig(window.config);
+        }
+    }
+}
+
+function loadConfig(config) {
+    var player = document.createElement("video");
+
+    if (config.height) {
+        player.setAttribute("height", config.height);
+    }
+
+    var mediaControls = document.createElement("div");
+    var controlsHeader = document.createElement("h2");
+    controlsHeader.appendChild(document.createTextNode("Pick Media"));
+    mediaControls.appendChild(controlsHeader);
+    for (var i = 0; i < config.media.length; ++i) {
+        var mediaItem = config.media[i];
+        var button = document.createElement("button");
+        button.appendChild(document.createTextNode(mediaItem.label));
+        button.addEventListener("click", player.setAttribute.bind(player, "src", mediaItem.url));
+        mediaControls.appendChild(button);
+    }
+    document.body.appendChild(mediaControls);
+
+    if (config.showControls) {
+        player.setAttribute("controls", "controls");
+    }
+
+    if (config.showTrackButtons) {
+        var trackControls = document.createElement("div");
+        var trackHeader = document.createElement("h2");
+        trackHeader.appendChild(document.createTextNode("Track Controls"));
+        trackControls.appendChild(trackHeader);
+
+        /* Setup controls when the video changes */
         var types = ["audio", "text", "video"];
         for (var i = 0; i < types.length; ++i) {
             var type = types[i];
             var list = player[type + "Tracks"];
             if (list) {
-                var func = setupControls.bind(this, player, type + "Controls", type);
+                var typeControls = document.createElement("div");
+                var func = setupControls.bind(this, player, typeControls, type);
                 list.addEventListener("addtrack", func);
                 list.addEventListener("removetrack", func);
                 func();
+                trackControls.appendChild(typeControls);
             } else {
-                print("No " + type + " tracks.");
+                console.log("No " + type + " tracks.");
             }
         }
-    } catch (e) {
-        print(e);
+        document.body.appendChild(trackControls);
+    }
+
+    if (config.width) {
+        player.setAttribute("width", config.width);
+    }
+
+    document.body.insertBefore(player, document.body.firstChild);
+}
+
+function setup() {
+    if (window.config) {
+        /* Config file is inline */
+        loadConfig(window.config);
+    } else {
+        /* Need to load remote config */
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = configFileReadyStateChanged;
+        request.open("GET", configFile, true);
+        request.send(null);
     }
 }
+
+window.addEventListener("load", setup);
 </script>
 </head>
 
 <body>
-<p>
-<video id="exampleVideo" controls="controls" width="640" height="480" onloadstart="setupHandlers();">
-    <source type="video/mpegts" src="Ultimate-Stream-1280x720-5Mb-mpeg2v-ac3_0100_CC_Trim.ts">
-    <source type="video/mpegts" src="http://10.49.5.101/videos/Ultimate-Stream-1280x720-5Mb-mpeg2v-ac3_0100_CC_Trim.ts">
-    <source type="video/mpegts" src="scte20_scte21_ntsc_dtvcc_7.mpg">
-    <source type="video/x-matroska" src="http://ftp.nluug.nl/ftp/graphics/blender/apricot/trailer/Sintel_Trailer1.480p.DivX_Plus_HD.mkv">
-    <source type="video/ogg" src="sintel_trailer-480p.ogv">
-    <source type="video/ogg" src="test.ogv">
-    <source type="video/x-matroska" src="test.mkv">
-    <!--<track src="subtitles.vtt" kind="subtitles" srclang="en" label="English" />-->
-</video>
-</p>
-
-<h2>VideoTrackList</h2>
-<p id="videoControls">
-</p>
-
-<h2>AudioTrackList</h2>
-<p id="audioControls">
-</p>
-
-<h2>TextTrackList</h2>
-<p id="textControls">
-</p>
-
-<div id="output"></div>
-
-</body></html>
+</body>
+</html>
