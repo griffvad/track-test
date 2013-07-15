@@ -57,19 +57,7 @@ var config = {
     width: 640
 };
 
-function getTracks(player, type) {
-    if(type == "audio") {
-        return player.audioTracks;
-    } else if (type == "text") {
-        return player.textTracks;
-    } else if (type == "video") {
-        return player.videoTracks;
-    }
-    throw("Invalid type: " + type);
-}
-
-function listTracks(player, type) {
-    var tracks = getTracks(player, type);
+function listTracks(tracks, type) {
     console.log("Listing " + tracks.length + " " + type + " tracks.");
     for(var j = 0; j < tracks.length; ++j) {
         var track = tracks[j];
@@ -107,7 +95,7 @@ function setTrackEnabled(track, enabled, button) {
     }
 }
 
-function setupControls(player, container, type) {
+function setupControls(tracks, container, type) {
     // Remove existing controls
     while (container.firstChild) {
         container.removeChild(container.firstChild);
@@ -116,25 +104,8 @@ function setupControls(player, container, type) {
     var button = document.createElement("button");
     var label = document.createTextNode("List " + type + " tracks");
     button.appendChild(label);
-    button.onclick = function() {
-        listTracks(player, type);
-    };
+    button.onclick = listTracks.bind(this, tracks, type);
     container.appendChild(button);
-
-    var tracks;
-    if(type == "audio") {
-        tracks = player.audioTracks;
-    } else if (type == "text") {
-        tracks = player.textTracks;
-    } else if (type == "video") {
-        tracks = player.videoTracks;
-    } else {
-        console.log("Invalid type: " + type);
-        return;
-    }
-    if(!tracks) {
-        return;
-    }
 
     console.log("There are " + tracks.length + " " + type + " tracks.");
     for(var i = 0; i < tracks.length; ++i) {
@@ -200,12 +171,12 @@ function loadConfig(config) {
         var types = ["audio", "text", "video"];
         for (var i = 0; i < types.length; ++i) {
             var type = types[i];
-            var list = player[type + "Tracks"];
-            if (list) {
+            var tracks = player[type + "Tracks"];
+            if (tracks) {
                 var typeControls = document.createElement("div");
-                var func = setupControls.bind(this, player, typeControls, type);
-                list.addEventListener("addtrack", func);
-                list.addEventListener("removetrack", func);
+                var func = setupControls.bind(this, tracks, typeControls, type);
+                tracks.addEventListener("addtrack", func);
+                tracks.addEventListener("removetrack", func);
                 func();
                 trackControls.appendChild(typeControls);
             } else {
