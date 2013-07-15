@@ -77,16 +77,33 @@ function listTracks(player, type) {
     }
 }
 
-function enableTrack(player, type, i, mode) {
-    console.log(((mode == true || mode == "showing") ? "Enabling " : "Disabling ") + type + " track " + i);
-    var tracks = getTracks(player, type);
-    var track = tracks[i];
-    if(type == "audio") {
-        track.enabled = mode;
-    } else if (type == "text") {
-        track.mode = mode;
-    } else if (type == "video") {
-        track.selected = mode;
+function isTrackEnabled(track) {
+    if (track.enabled !== undefined) {
+        return track.enabled;
+    } else if (track.selected !== undefined) {
+        return track.selected;
+    } else if (track.mode !== undefined) {
+        return track.mode === "showing";
+    } else {
+        console.log("isTrackEnabled got invalid track type: ", type);
+    }
+}
+
+function setTrackEnabled(track, enabled, button) {
+    if (track.enabled !== undefined) {
+        track.enabled = enabled;
+    } else if (track.selected !== undefined) {
+        track.selected = enabled;
+    } else if (track.mode !== undefined) {
+        track.mode = enabled ? "showing" : "disabled";
+    } else {
+        console.log("setTrackEnabled got invalid track type: ", type);
+    }
+
+    if (button) {
+        var label = button.firstChild;
+        label.nodeValue = label.nodeValue.replace(/(Dis|En)able/, enabled ? "Disable" : "Enable");
+        button.onclick = setTrackEnabled.bind(this, track, !enabled, button);
     }
 }
 
@@ -121,24 +138,13 @@ function setupControls(player, container, type) {
 
     console.log("There are " + tracks.length + " " + type + " tracks.");
     for(var i = 0; i < tracks.length; ++i) {
-        var button = document.createElement("button");
-        var label = document.createTextNode("Enable " + type + " " + i);
-        button.appendChild(label);
-        if(type == "audio" || type == "video") {
-            button.onclick = enableTrack.bind(this, player, type, i, true);
-        } else {
-            button.onclick = enableTrack.bind(this, player, type, i, "showing");
-        }
-        container.appendChild(button);
+        var track = tracks[i];
+        var enabled = isTrackEnabled(track);
 
-        button = document.createElement("button");
-        label = document.createTextNode("Disable " + type + " " + i);
+        var button = document.createElement("button");
+        var label = document.createTextNode((enabled ? "Disable " : "Enable ") + type + " " + i);
         button.appendChild(label);
-        if(type == "audio" || type == "video") {
-            button.onclick = enableTrack.bind(this, player, type, i, false);
-        } else {
-            button.onclick = enableTrack.bind(this, player, type, i, "disabled");
-        }
+        button.onclick = setTrackEnabled.bind(this, track, !enabled, button);
         container.appendChild(button);
     }
 }
