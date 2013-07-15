@@ -84,14 +84,13 @@ function setTrackEnabled(track, enabled, button) {
         track.selected = enabled;
     } else if (track.mode !== undefined) {
         track.mode = enabled ? "showing" : "disabled";
-    } else {
-        console.log("setTrackEnabled got invalid track type: ", type);
-    }
 
-    if (button) {
+        /* TextTrackList doesn't have a "change" event yet */
         var label = button.firstChild;
         label.nodeValue = label.nodeValue.replace(/(Dis|En)able/, enabled ? "Disable" : "Enable");
         button.onclick = setTrackEnabled.bind(this, track, !enabled, button);
+    } else {
+        console.log("setTrackEnabled got invalid track type: ", type);
     }
 }
 
@@ -176,6 +175,7 @@ function loadConfig(config) {
                 var typeControls = document.createElement("div");
                 var func = setupControls.bind(this, tracks, typeControls, type);
                 tracks.addEventListener("addtrack", func);
+                tracks.addEventListener("change", func);
                 tracks.addEventListener("removetrack", func);
                 func();
                 trackControls.appendChild(typeControls);
