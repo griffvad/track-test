@@ -43,8 +43,20 @@ var config = {
         label: "Sintel Trailer (Local File; h264 + aac + Subtitles)",
         url: "Sintel_Trailer1.480p.DivX_Plus_HD.mkv"
     }, {
+        label: "Sintel Trailer (Local File; Theora + Vorbis + Kate)",
+        url: "sintel_trailer-480p.ogv"
+    }, {
         label: "Tears of Steel (Local File; MPEG-TS + CEA 608)",
         url: "Ultimate-Stream-1280x720-5Mb-mpeg2v-ac3_0100_CC_Trim.ts"
+    }, {
+        label: "WebKit Counting-Subtitled (Local File; m4v)",
+        url: "../webkit/LayoutTests/media/content/counting-subtitled.m4v"
+    }, {
+        label: "WebKit Counting-Subtitled (Local File; mkv; mpeg4 + srt)",
+        url: "../webkit/LayoutTests/media/content/counting-subtitled-srt.mkv"
+    }, {
+        label: "WebKit Counting-Subtitled (Local File; ogg; Theora + Kate)",
+        url: "../webkit/LayoutTests/media/content/counting-subtitled-kate.ogv"
     }],
 
     /* Whether or not to show native controls */
@@ -151,7 +163,15 @@ function loadConfig(config) {
         var mediaItem = config.media[i];
         var button = document.createElement("button");
         button.appendChild(document.createTextNode(mediaItem.label));
-        button.addEventListener("click", player.setAttribute.bind(player, "src", mediaItem.url));
+        button.addEventListener("click", function(url) {
+            var source = document.createElement("source");
+            source.src = url;
+            var child = player.firstChild;
+            if (child)
+                player.replaceChild(source, player.firstChild);
+            else
+                player.appendChild(source);
+        }.bind(this, mediaItem.url));
         mediaControls.appendChild(button);
     }
     document.body.appendChild(mediaControls);
