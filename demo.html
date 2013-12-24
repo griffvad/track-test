@@ -86,6 +86,8 @@ var config = {
     /* Whether or not to show extra track control buttons */
     showTrackButtons: true,
 
+    showTrickModeButtons: true,
+
     /* Width of the video element. Leave falsy for auto. */
     width: 640
 };
@@ -170,7 +172,7 @@ function configFileReadyStateChanged(event) {
 }
 
 function loadConfig(config) {
-    var player = document.createElement("video");
+    window.player = document.createElement("video");
 
     if (config.height) {
         player.setAttribute("height", config.height);
@@ -225,6 +227,27 @@ function loadConfig(config) {
             }
         }
         document.body.appendChild(trackControls);
+    }
+
+    if (config.showTrickModeButtons) {
+        var trickModeControls = document.createElement("div");
+        var trickModeHeader = document.createElement("h2");
+        trickModeHeader.appendChild(document.createTextNode("Trick Mode Controls"));
+        trickModeControls.appendChild(trickModeHeader);
+
+        var input = document.createElement("input");
+        input.type = "text";
+        input.defaultValue = "1.0";
+        var button = document.createElement("button");
+        var label = document.createTextNode("Set Rate");
+        button.appendChild(label);
+        button.onclick = function() {
+            player.playbackRate = input.value;
+        };
+        trickModeControls.appendChild(input);
+        trickModeControls.appendChild(button);
+
+        document.body.appendChild(trickModeControls);
     }
 
     if (config.width) {
