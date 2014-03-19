@@ -95,6 +95,40 @@ var config = {
     width: 640
 };
 
+function parsePMTCue(cue) {
+    var view = new DataView(cue.data);
+    var parsed = {
+        table_id: view.getUint8(0),
+        section_syntax_indicator: (view.getUint8(1) & parseInt('80', 16)) >> 7,
+        section_length: view.getUint16(1) & parseInt('FFF', 16),
+        program_number: view.getUint16(3),
+        version_number: (view.getUint8(5) & parseInt('3E', 16)) >> 1,
+        current_next_indicator: view.getUint8(5) & 1,
+        section_number: view.getUint8(6),
+        last_section_number: view.getUint8(7),
+        PCR_PID: view.getUint16(8) & parseInt('1FFF', 16),
+        program_info_length: view.getUint16(10) & parseInt('FFF', 16),
+        streams: [],
+        CRC: view.getUint32(cue.data.byteLength - 4),
+    };
+
+    // todo: handle descriptors
+
+    var stream_start = 12 + parsed.program_info_length;
+    var streams_end = cue.data.byteLength - 4 - 5;
+    var i = 0;
+    while (stream_start <= streams_end) {
+        parsed.streams[i] = {
+            stream_type: view.getUint8(stream_start),
+            elementary_PID: view.getUint16(stream_start + 1) & parseInt('1FFF', 16),
+            ES_info_length: view.getUint16(stream_start + 3) & parseInt('FFF', 16),
+        };
+        stream_start += 5 + parsed.streams[i].ES_info_length;
+        ++i;
+    }
+    return parsed;
+}
+
 function listTracks(tracks, type) {
     log("Listing " + tracks.length + " " + type + " tracks.");
     for(var j = 0; j < tracks.length; ++j) {
@@ -105,11 +139,25 @@ function listTracks(tracks, type) {
 
 // Based on http://stackoverflow.com/a/8779466/212555
 function flatten(obj) {
-    var result = {};
-    for(var key in obj) {
-        result[key] = obj[key];
+    if (obj instanceof Object) {
+        var result = {};
+        for(var key in obj) {
+            if (obj instanceof DataCue && key == "track")
+                continue;
+            result[key] = obj[key];
+        }
+        if (obj instanceof DataCue) {
+            result["data"] = parsePMTCue(obj);
+        } else if (obj instanceof TextTrack && obj.kind == "metadata" && obj.cues) {
+            result.cues = [];
+            for (var i = 0; i < obj.cues.length; ++i) {
+                result.cues[i] = flatten(obj.cues[i]);
+            }
+        }
+        return result;
+    } else {
+        return obj;
     }
-    return result;
 }
 
 function log(message, data) {
