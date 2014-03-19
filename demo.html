@@ -96,11 +96,52 @@ var config = {
 };
 
 function listTracks(tracks, type) {
-    console.log("Listing " + tracks.length + " " + type + " tracks.");
+    log("Listing " + tracks.length + " " + type + " tracks.");
     for(var j = 0; j < tracks.length; ++j) {
         var track = tracks[j];
-        console.log(type + " track[" + j + "]: ", track);
+        log(type + " track[" + j + "]: ", track);
     }
+}
+
+// Based on http://stackoverflow.com/a/8779466/212555
+function flatten(obj) {
+    var result = {};
+    for(var key in obj) {
+        result[key] = obj[key];
+    }
+    return result;
+}
+
+function log(message, data) {
+    var logs = document.getElementById("logs");
+    if (!logs) {
+        var container = document.createElement("div");
+
+        var title = document.createElement("h2");
+        title.appendChild(document.createTextNode("Logs"));
+        container.appendChild(title);
+
+        var clearButton = document.createElement("button");
+        clearButton.appendChild(document.createTextNode("Clear Logs"));
+        clearButton.addEventListener("click", function() {
+            while (logs.firstChild) {
+                logs.removeChild(logs.firstChild);
+            }
+        });
+        container.appendChild(clearButton);
+
+        logs = document.createElement("div");
+        logs.setAttribute("id", "logs");
+        container.appendChild(logs);
+        document.body.appendChild(container);
+    }
+
+    var text = message;
+    if (data)
+        text += JSON.stringify(flatten(data));
+    var paragraph = document.createElement("p");
+    paragraph.appendChild(document.createTextNode(text));
+    logs.insertBefore(paragraph, logs.firstChild);
 }
 
 function isTrackEnabled(track) {
@@ -111,7 +152,7 @@ function isTrackEnabled(track) {
     } else if (track.mode !== undefined) {
         return track.mode === "showing";
     } else {
-        console.log("isTrackEnabled got invalid track type: ", type);
+        log("isTrackEnabled got invalid track type: ", type);
     }
 }
 
@@ -128,7 +169,7 @@ function setTrackEnabled(track, enabled, button) {
         label.nodeValue = label.nodeValue.replace(/(Dis|En)able/, enabled ? "Disable" : "Enable");
         button.onclick = setTrackEnabled.bind(this, track, !enabled, button);
     } else {
-        console.log("setTrackEnabled got invalid track type: ", type);
+        log("setTrackEnabled got invalid track type: ", type);
     }
 }
 
@@ -144,7 +185,7 @@ function setupControls(tracks, container, type) {
     button.onclick = listTracks.bind(this, tracks, type);
     container.appendChild(button);
 
-    console.log("There are " + tracks.length + " " + type + " tracks.");
+    log("There are " + tracks.length + " " + type + " tracks.");
     for(var i = 0; i < tracks.length; ++i) {
         var track = tracks[i];
         if (track.mode == "disabled") {
@@ -163,12 +204,12 @@ function setupControls(tracks, container, type) {
 function configFileReadyStateChanged(event) {
     var request = event.target;
     if (request.readyState === 4) {
-        console.log("Loaded config file!");
+        log("Loaded config file!");
         if (request.status !== 200) {
             if (request.status === 0) {
-                console.log("Failed to load config file due to cross origin security.");
+                log("Failed to load config file due to cross origin security.");
             } else {
-                console.log("Failed to load config file. Status was " + request.status);
+                log("Failed to load config file. Status was " + request.status);
             }
         } else {
             window.config = JSON.parse(request.responseText);
@@ -229,7 +270,7 @@ function loadConfig(config) {
                 func();
                 trackControls.appendChild(typeControls);
             } else {
-                console.log("No " + type + " tracks.");
+                log("No " + type + " tracks.");
             }
         }
         document.body.appendChild(trackControls);
