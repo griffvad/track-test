@@ -144,6 +144,9 @@ function setupControls(tracks, container, type) {
     console.log("There are " + tracks.length + " " + type + " tracks.");
     for(var i = 0; i < tracks.length; ++i) {
         var track = tracks[i];
+        if (track.mode == "disabled") {
+            track.mode = "hidden";
+        }
         var enabled = isTrackEnabled(track);
 
         var button = document.createElement("button");
