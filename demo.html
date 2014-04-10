@@ -27,9 +27,6 @@ var config = {
 
     /* List of media options. Name will be shown on the button label, url is the URL */
     media: [{
-        label: "Tears of Steel (MPEG-TS + CEA 608)",
-        url: "http://10.49.5.101/videos/Ultimate-Stream-1280x720-5Mb-mpeg2v-ac3_0100_CC_Trim.ts"
-    }, {
         label: "Sintel Trailer (Theora + Vorbis + Kate)",
         url: "http://ftp.nluug.nl/ftp/graphics/blender/apricot/trailer/sintel_trailer-480p.ogv"
     }, {
@@ -50,6 +47,9 @@ var config = {
     }, {
         label: "Tears of Steel (Local File; MPEG-TS + CEA 608)",
         url: "Ultimate-Stream-1280x720-5Mb-mpeg2v-ac3_0100_CC_Trim.ts"
+    },{
+        label: "Tears of Steel from FTP (Local File; MPEG-PS + CEA 608)",
+        url: "tears_of_steel_720p-MPEG-2 Program stream, 15 Mbps.mpeg"
     }, {
         label: "WebKit Counting-Subtitled (Local File; m4v)",
         url: "../webkit/LayoutTests/media/content/counting-subtitled.m4v"
@@ -83,6 +83,18 @@ var config = {
     }, {
         label: "SPTS-1_track-2_referenced_videos-1min.ts (DLNA test video?)",
         url: "SPTS-1_track-2_referenced_videos-1min.ts"
+    }, {
+        label: "UserPrivateStreams.ts (DLNA test video?)",
+        url: "UserPrivateStreams.ts"
+    }, {
+        label: "ClosedCaption.ts (DLNA test video?)",
+        url: "ClosedCaption.ts"
+    }, {
+        label: "football.ts",
+        url: "football.ts"
+    }, {
+        label: "mpt-200309161700-clip.ts",
+        url: "mpt-200309161700-clip.ts"
     }],
 
     /* Whether or not to show native controls */
