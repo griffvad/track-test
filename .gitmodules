@@ -1,0 +1,3 @@
+[submodule "mpegtssections-js"]
+	path = mpegtssections-js
+	url = https://github.com/cablelabs/mpegtssections-js.git
